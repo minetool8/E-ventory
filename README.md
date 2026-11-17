@@ -24,3 +24,11 @@ Jar appears in build/libs/. Drop it in your mods folder together with Forge, Cur
 - Health/armor/food/air/XP and Legendary Survival Overhaul bars (health_overhaul, thirst, temperature, wetness, body_damage, cold_hunger) are moved to the bottom-right. LSO is NOT a compile dependency; it is matched by overlay id only.
 - Options: config/gridinventory-client.toml (hudEnabled, hudMargin, ringRadius, centerScale, scrollSmoothing, showOffhand, moveSurvivalRight, survivalYOffset).
 - Not merged: the 9-slot inventory limit, mixins, blur, and the "E opens Backpacked screen" redirect (they conflict with the grid inventory screen).
+
+## GitHub Actions
+`.github/workflows/main.yml` builds the jar on every push (Java 17, Gradle 8.8). Push the whole folder to a repo (including `libs/`), then download `gridinventory-jar` from the run's Artifacts.
+
+## UI notes
+- Dark theme throughout; the screen darkens the world with a translucent tint instead of black.
+- 2x2 crafting grid sits under the player (full vanilla crafting logic; items return to you on close).
+- Armor items render at 32px (2x). The whole 44px armor cell is clickable.

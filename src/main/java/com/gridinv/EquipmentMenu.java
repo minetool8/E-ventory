@@ -10,6 +10,7 @@ import com.mrcrayfish.backpacked.inventory.container.slot.BackpackSlot;
 import com.mrcrayfish.backpacked.item.BackpackItem;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
@@ -19,6 +20,13 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.CraftingContainer;
+import net.minecraft.world.inventory.ResultContainer;
+import net.minecraft.world.inventory.ResultSlot;
+import net.minecraft.world.inventory.TransientCraftingContainer;
+import net.minecraft.world.item.crafting.CraftingRecipe;
+import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.NetworkHooks;
@@ -46,6 +54,12 @@ public class EquipmentMenu extends AbstractContainerMenu {
     public final int armorStart = 0, mainStart = 4, hotbarStart = 31, hotbarEnd = 40;
     public final int backpackStart = 40;
     public int backpackEnd, curioStart, curioEnd;
+    /** crafting: resultIndex is the result slot, followed by 4 input slots. */
+    public int resultIndex, craftEnd;
+
+    private final CraftingContainer craftSlots = new TransientCraftingContainer(this, 2, 2);
+    private final ResultContainer resultSlots = new ResultContainer();
+    private final Player player;
 
     /** Everything the client needs to build an identical menu. */
     private record Data(boolean hasBackpack, int cols, int rows, UnlockableSlots unlocked,
@@ -138,7 +152,7 @@ public class EquipmentMenu extends AbstractContainerMenu {
 
     private EquipmentMenu(int id, Inventory inv, Data data, Container backpackContainer) {
         super(GridInventoryMod.EQUIPMENT_MENU.get(), id);
-        Player player = inv.player;
+        this.player = inv.player;
         this.hasBackpack = data.hasBackpack;
         this.backpackTitle = data.title;
 
@@ -190,6 +204,44 @@ public class EquipmentMenu extends AbstractContainerMenu {
             }
         }
         curioEnd = slots.size();
+
+        // crafting (2x2) below the player
+        resultIndex = slots.size();
+        addSlot(new ResultSlot(player, craftSlots, resultSlots, 0, L.resultX(), L.resultY()));
+        for (int r = 0; r < 2; r++)
+            for (int c = 0; c < 2; c++)
+                addSlot(new Slot(craftSlots, c + r * 2, L.craftInX(c), L.craftInY(r)));
+        craftEnd = slots.size();
+    }
+
+    // ---------------------------------------------------------------- crafting
+
+    @Override
+    public void slotsChanged(Container container) {
+        if (container == craftSlots) updateResult();
+    }
+
+    private void updateResult() {
+        Level level = player.level();
+        if (level.isClientSide || !(player instanceof ServerPlayer sp)) return;
+        ItemStack result = ItemStack.EMPTY;
+        var recipe = level.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, craftSlots, level);
+        if (recipe.isPresent()) {
+            CraftingRecipe r = recipe.get();
+            if (resultSlots.setRecipeUsed(level, sp, r)) {
+                ItemStack assembled = r.assemble(craftSlots, level.registryAccess());
+                if (assembled.isItemEnabled(level.enabledFeatures())) result = assembled;
+            }
+        }
+        resultSlots.setItem(0, result);
+        sp.connection.send(new ClientboundContainerSetSlotPacket(containerId, incrementStateId(), resultIndex, result));
+    }
+
+    @Override
+    public void removed(Player p) {
+        super.removed(p);
+        resultSlots.clearContent();
+        if (!p.level().isClientSide) clearContainer(p, craftSlots);
     }
 
     @Override
@@ -220,6 +272,7 @@ public class EquipmentMenu extends AbstractContainerMenu {
         }
 
         if (!moved) return ItemStack.EMPTY;
+        if (index == resultIndex) slot.onQuickCraft(stack, copy);
         if (stack.isEmpty()) slot.setByPlayer(ItemStack.EMPTY); else slot.setChanged();
         if (stack.getCount() == copy.getCount()) return ItemStack.EMPTY;
         slot.onTake(player, stack);
