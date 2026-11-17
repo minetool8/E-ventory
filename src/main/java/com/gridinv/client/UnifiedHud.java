@@ -12,10 +12,13 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
+import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -26,13 +29,12 @@ import java.util.Set;
  */
 public final class UnifiedHud {
     private static final String LSO = "legendarysurvivaloverhaul";
-    // Overlay ids registered by LSO 2.4.7 (read from its ClientModBusEvents constants).
-    private static final Set<String> LSO_BARS = Set.of(
-            "health_overhaul", "cold_hunger", "thirst", "temperature", "wetness", "body_damage");
 
     private static final ResourceLocation PARCOOL_STAMINA = new ResourceLocation("parcool", "hud.stamina.host");
 
     private static final Set<ResourceLocation> PUSHED = new HashSet<>();
+    /** ForgeGui leftHeight/rightHeight values to restore after each moved bar. */
+    private static final Map<ResourceLocation, int[]> SAVED = new HashMap<>();
     private static float visualSel = -1f;
     private static long lastMillis;
 
@@ -46,15 +48,8 @@ public final class UnifiedHud {
         event.registerAbove(VanillaGuiOverlay.HOTBAR.id(), "ring", RING);
     }
 
-    private static boolean isMovedBar(ResourceLocation id) {
-        if (id.getNamespace().equals(LSO)) return LSO_BARS.contains(id.getPath());
-        return id.equals(VanillaGuiOverlay.PLAYER_HEALTH.id())
-                || id.equals(VanillaGuiOverlay.ARMOR_LEVEL.id())
-                || id.equals(VanillaGuiOverlay.FOOD_LEVEL.id())
-                || id.equals(VanillaGuiOverlay.AIR_LEVEL.id())
-                || id.equals(VanillaGuiOverlay.MOUNT_HEALTH.id())
-                || id.equals(VanillaGuiOverlay.JUMP_BAR.id())
-                || id.equals(VanillaGuiOverlay.EXPERIENCE_BAR.id());
+    private static boolean isLso(ResourceLocation id, String path) {
+        return id.getNamespace().equals(LSO) && id.getPath().equals(path);
     }
 
     public static void onOverlayPre(RenderGuiOverlayEvent.Pre e) {
@@ -73,24 +68,73 @@ public final class UnifiedHud {
         }
 
         if (!enabled()) return;
-        if (id.equals(VanillaGuiOverlay.HOTBAR.id())) {
+        if (id.equals(VanillaGuiOverlay.HOTBAR.id())) { e.setCanceled(true); return; }
+        if (id.equals(VanillaGuiOverlay.EXPERIENCE_BAR.id()) && HudConfig.CLIENT.hideExperienceBar.get()) {
             e.setCanceled(true);
             return;
         }
-        if (e.isCanceled() || !HudConfig.CLIENT.moveSurvivalRight.get() || !isMovedBar(id)) return;
+        if (e.isCanceled() || !HudConfig.CLIENT.moveSurvivalRight.get()) return;
+
         int w = e.getWindow().getGuiScaledWidth();
+        int h = e.getWindow().getGuiScaledHeight();
         int margin = HudConfig.CLIENT.hudMargin.get();
-        // vanilla clusters are 182 wide starting at w/2 - 91; move so the right edge sits at w - margin
-        float dx = (w - margin - 182) - (w / 2f - 91);
+        int spacing = HudConfig.CLIENT.barRowSpacing.get();
+        int reserve = HudConfig.CLIENT.taczReserveBottom.get();
+        float rightEdge = w - margin;
+        int baseBottom = h - margin - reserve;               // bottom edge of the lowest row
+
+        // Row layout, bottom to top: hunger, thirst, hearts, armor, air. Temperature etc. sit to the left.
+        int row = -1;
+        boolean left = false;
+        if (id.equals(VanillaGuiOverlay.PLAYER_HEALTH.id()) || isLso(id, "health_overhaul")) { row = 2; left = true; }
+        else if (id.equals(VanillaGuiOverlay.ARMOR_LEVEL.id())) { row = 3; left = true; }
+        else if (id.equals(VanillaGuiOverlay.FOOD_LEVEL.id()) || isLso(id, "cold_hunger")
+                || id.equals(VanillaGuiOverlay.MOUNT_HEALTH.id())) row = 0;
+        else if (isLso(id, "thirst")) row = 1;
+        else if (id.equals(VanillaGuiOverlay.AIR_LEVEL.id())) row = 4;
+
         PoseStack pose = e.getGuiGraphics().pose();
+        if (row >= 0) {
+            if (!(Minecraft.getInstance().gui instanceof ForgeGui fg)) return;
+            SAVED.put(id, new int[]{fg.leftHeight, fg.rightHeight});
+            int heightValue = margin + reserve + 9 + row * spacing;   // bars draw at y = screenHeight - xHeight
+            if (left) fg.leftHeight = heightValue; else fg.rightHeight = heightValue;
+            // vanilla left bars are 81 wide from w/2-91; right bars end at w/2+91
+            float dx = left ? rightEdge - (w / 2f - 91 + 81) : rightEdge - (w / 2f + 91);
+            pose.pushPose();
+            pose.translate(dx, 0, 0);
+            PUSHED.add(id);
+            return;
+        }
+
+        // Absolute-positioned LSO icons: natural positions read from LSO 2.4.7 (offsets default 0).
+        float midY = baseBottom - (9 + spacing) / 2f;
+        float tempX = rightEdge - 81 - 24;
+        float dx, dy;
+        if (isLso(id, "temperature")) {                  // 16px icon at (w/2-8, h-52)
+            dx = tempX - (w / 2f - 8);
+            dy = (midY - 8) - (h - 52);
+        } else if (isLso(id, "wetness")) {               // 10px icon at (w/2-20, h-61)
+            dx = (tempX - 14) - (w / 2f - 20);
+            dy = (midY - 5) - (h - 61);
+        } else if (isLso(id, "body_damage")) {           // ~16px figure at (w/2+92, h-33)
+            dx = (tempX - 14 - 22) - (w / 2f + 92);
+            dy = (midY - 8) - (h - 33);
+        } else {
+            return;
+        }
         pose.pushPose();
-        pose.translate(dx, HudConfig.CLIENT.survivalYOffset.get(), 0);
+        pose.translate(dx, dy, 0);
         PUSHED.add(id);
     }
 
     public static void onOverlayPost(RenderGuiOverlayEvent.Post e) {
-        if (PUSHED.remove(e.getOverlay().id())) {
-            e.getGuiGraphics().pose().popPose();
+        ResourceLocation id = e.getOverlay().id();
+        if (PUSHED.remove(id)) e.getGuiGraphics().pose().popPose();
+        int[] saved = SAVED.remove(id);
+        if (saved != null && Minecraft.getInstance().gui instanceof ForgeGui fg) {
+            fg.leftHeight = saved[0];
+            fg.rightHeight = saved[1];
         }
     }
 

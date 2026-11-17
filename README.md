@@ -37,3 +37,6 @@ Jar appears in build/libs/. Drop it in your mods folder together with Forge, Cur
 - Ring hotbar: unchanged.
 - Hearts, armor, hunger, thirst, temperature, etc.: NOT moved (default vanilla / Legendary Survival Overhaul positions). Set `moveSurvivalRight = true` in config/gridinventory-client.toml to move them to the right again.
 - ParCool stamina: kept where ParCool draws it, pulled down by `staminaYOffset` pixels (default 20). Raise it to push lower, lower/negative to push up.
+
+## Update: bottom-right survival stack
+Bars stack in the bottom-right corner (bottom to top): hunger, thirst, hearts, armor, air. Temperature, wetness and body-damage icons sit to the left of the stack. The experience bar and vanilla hotbar are hidden. `taczReserveBottom` (default 44) keeps the bottom-right corner free for the TACZ gun HUD; `barRowSpacing` sets row spacing.

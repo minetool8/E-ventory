@@ -24,7 +24,9 @@ public final class HudConfig {
         public final ForgeConfigSpec.DoubleValue scrollSmoothing;
         public final ForgeConfigSpec.BooleanValue showOffhand;
         public final ForgeConfigSpec.BooleanValue moveSurvivalRight;
-        public final ForgeConfigSpec.IntValue survivalYOffset;
+        public final ForgeConfigSpec.IntValue barRowSpacing;
+        public final ForgeConfigSpec.IntValue taczReserveBottom;
+        public final ForgeConfigSpec.BooleanValue hideExperienceBar;
         public final ForgeConfigSpec.IntValue staminaYOffset;
 
         Client(ForgeConfigSpec.Builder b) {
@@ -37,11 +39,15 @@ public final class HudConfig {
             scrollSmoothing = b.comment("0-1, higher = snappier ring rotation when scrolling.")
                     .defineInRange("scrollSmoothing", 0.35, 0.05, 1.0);
             showOffhand = b.define("showOffhand", true);
-            moveSurvivalRight = b.comment("false = hearts, armor, hunger, thirst, temperature etc. stay exactly where vanilla/Legendary Survival Overhaul put them.",
-                            "true = move them to the bottom-right.")
-                    .define("moveSurvivalRight", false);
-            survivalYOffset = b.comment("Pixels to shift the right-side survival cluster down (negative = up).")
-                    .defineInRange("survivalYOffset", 16, -64, 64);
+            moveSurvivalRight = b.comment("Stack hearts, armor, hunger, thirst, temperature etc. in the bottom-right corner.")
+                    .define("moveSurvivalRight", true);
+            barRowSpacing = b.comment("Vertical distance between the stacked bars (GUI pixels).")
+                    .defineInRange("barRowSpacing", 14, 10, 40);
+            taczReserveBottom = b.comment("Empty space kept at the bottom-right for the TACZ gun/ammo HUD (GUI pixels).",
+                            "The bar stack sits above this. Raise it if the bars overlap the gun HUD.")
+                    .defineInRange("taczReserveBottom", 44, 0, 200);
+            hideExperienceBar = b.comment("Hide the experience bar and level number.")
+                    .define("hideExperienceBar", true);
             staminaYOffset = b.comment("ParCool stamina bar: pixels to pull DOWN from where ParCool draws it (negative = up).",
                             "Keeps its horizontal position. 0 = untouched.")
                     .defineInRange("staminaYOffset", 20, -300, 300);
