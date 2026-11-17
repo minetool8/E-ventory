@@ -32,3 +32,8 @@ Jar appears in build/libs/. Drop it in your mods folder together with Forge, Cur
 - Dark theme throughout; the screen darkens the world with a translucent tint instead of black.
 - 2x2 crafting grid sits under the player (full vanilla crafting logic; items return to you on close).
 - Armor items render at 32px (2x). The whole 44px armor cell is clickable.
+
+## HUD positions (current)
+- Ring hotbar: unchanged.
+- Hearts, armor, hunger, thirst, temperature, etc.: NOT moved (default vanilla / Legendary Survival Overhaul positions). Set `moveSurvivalRight = true` in config/gridinventory-client.toml to move them to the right again.
+- ParCool stamina: kept where ParCool draws it, pulled down by `staminaYOffset` pixels (default 20). Raise it to push lower, lower/negative to push up.

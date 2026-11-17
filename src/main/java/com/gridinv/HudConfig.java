@@ -25,6 +25,7 @@ public final class HudConfig {
         public final ForgeConfigSpec.BooleanValue showOffhand;
         public final ForgeConfigSpec.BooleanValue moveSurvivalRight;
         public final ForgeConfigSpec.IntValue survivalYOffset;
+        public final ForgeConfigSpec.IntValue staminaYOffset;
 
         Client(ForgeConfigSpec.Builder b) {
             b.push("hud");
@@ -36,9 +37,14 @@ public final class HudConfig {
             scrollSmoothing = b.comment("0-1, higher = snappier ring rotation when scrolling.")
                     .defineInRange("scrollSmoothing", 0.35, 0.05, 1.0);
             showOffhand = b.define("showOffhand", true);
-            moveSurvivalRight = b.define("moveSurvivalRight", true);
+            moveSurvivalRight = b.comment("false = hearts, armor, hunger, thirst, temperature etc. stay exactly where vanilla/Legendary Survival Overhaul put them.",
+                            "true = move them to the bottom-right.")
+                    .define("moveSurvivalRight", false);
             survivalYOffset = b.comment("Pixels to shift the right-side survival cluster down (negative = up).")
                     .defineInRange("survivalYOffset", 16, -64, 64);
+            staminaYOffset = b.comment("ParCool stamina bar: pixels to pull DOWN from where ParCool draws it (negative = up).",
+                            "Keeps its horizontal position. 0 = untouched.")
+                    .defineInRange("staminaYOffset", 20, -300, 300);
             b.pop();
         }
     }

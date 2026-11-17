@@ -30,6 +30,8 @@ public final class UnifiedHud {
     private static final Set<String> LSO_BARS = Set.of(
             "health_overhaul", "cold_hunger", "thirst", "temperature", "wetness", "body_damage");
 
+    private static final ResourceLocation PARCOOL_STAMINA = new ResourceLocation("parcool", "hud.stamina.host");
+
     private static final Set<ResourceLocation> PUSHED = new HashSet<>();
     private static float visualSel = -1f;
     private static long lastMillis;
@@ -56,8 +58,21 @@ public final class UnifiedHud {
     }
 
     public static void onOverlayPre(RenderGuiOverlayEvent.Pre e) {
-        if (!enabled()) return;
         ResourceLocation id = e.getOverlay().id();
+
+        // ParCool stamina: same place as before, just pulled down toward the bottom.
+        if (id.equals(PARCOOL_STAMINA)) {
+            int dy = HudConfig.CLIENT.staminaYOffset.get();
+            if (dy != 0 && !e.isCanceled()) {
+                PoseStack pose = e.getGuiGraphics().pose();
+                pose.pushPose();
+                pose.translate(0, dy, 0);
+                PUSHED.add(id);
+            }
+            return;
+        }
+
+        if (!enabled()) return;
         if (id.equals(VanillaGuiOverlay.HOTBAR.id())) {
             e.setCanceled(true);
             return;
