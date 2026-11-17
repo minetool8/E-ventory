@@ -1,0 +1,37 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="MIT"
+
+[[mods]]
+modId="gridinventory"
+version="${version}"
+displayName="Grid Inventory"
+description='''Replaces the E inventory with a layout showing the player, Curios slots, armor, a Backpacked backpack and the inventory.'''
+
+[[dependencies.gridinventory]]
+modId="forge"
+mandatory=true
+versionRange="[47,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.gridinventory]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1,1.21)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.gridinventory]]
+modId="curios"
+mandatory=true
+versionRange="[5.14,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.gridinventory]]
+modId="backpacked"
+mandatory=true
+versionRange="[3.0.9,)"
+ordering="AFTER"
+side="BOTH"
