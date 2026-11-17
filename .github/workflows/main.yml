@@ -1,0 +1,67 @@
+name: main
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.8'
+
+      - name: Validate dependency JARs
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          dependencies=(
+            "libs/curios-5.14.1.jar"
+            "libs/backpacked-3.0.9.jar"
+            "libs/framework-0.8.0.jar"
+          )
+
+          for file in "${dependencies[@]}"; do
+            echo "Checking: $file"
+
+            if [[ ! -s "$file" ]]; then
+              echo "::error::Missing or empty dependency: $file"
+              exit 1
+            fi
+
+            if ! unzip -t "$file" >/dev/null 2>&1; then
+              echo "::error::Invalid or corrupted JAR: $file"
+              file "$file"
+              exit 1
+            fi
+
+            echo "Valid JAR: $file"
+          done
+
+          echo "All dependency archives passed validation."
+
+      - name: Build mod
+        run: gradle build --no-daemon --stacktrace
+
+      - name: Upload build artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gridinventory-jar
+          path: build/libs/*.jar
+          if-no-files-found: error
