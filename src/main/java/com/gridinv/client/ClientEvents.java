@@ -7,6 +7,7 @@ import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.world.inventory.ChestMenu;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraftforge.api.distmarker.Dist;
+import com.gridinv.HudConfig;
 import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -26,6 +27,12 @@ public class ClientEvents {
     /** Forge-bus: replace the vanilla E inventory with ours. */
     @Mod.EventBusSubscriber(modid = GridInventoryMod.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
     public static class ForgeBus {
+        /** Creative inventory (and any other effect-rendering inventory screen) must not list effects. */
+        @SubscribeEvent
+        public static void onInventoryEffects(ScreenEvent.RenderInventoryMobEffects event) {
+            if (HudConfig.CLIENT.hideEffects.get()) event.setCanceled(true);
+        }
+
         @SubscribeEvent
         public static void onScreenOpening(ScreenEvent.Opening event) {
             // chest / barrel / ender chest: the server swaps it for our screen; remember the title

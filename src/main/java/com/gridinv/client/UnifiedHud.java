@@ -63,6 +63,14 @@ public final class UnifiedHud {
         ResourceLocation id = e.getOverlay().id();
         if (HudConfig.CLIENT.logOverlayIds.get() && SEEN.add(id)) LOGGER.info("HUD overlay: {}", id);
 
+        // Active effects are never shown: vanilla icons plus any other mod's potion/effect overlay.
+        if (HudConfig.CLIENT.hideEffects.get()
+                && (id.equals(VanillaGuiOverlay.POTION_ICONS.id())
+                    || (!id.equals(RING_ID) && (id.getPath().contains("potion") || id.getPath().contains("effect"))))) {
+            e.setCanceled(true);
+            return;
+        }
+
         // ParCool stamina: same place as before, just pulled down toward the bottom.
         if (id.equals(PARCOOL_STAMINA)) {
             int dy = HudConfig.CLIENT.staminaYOffset.get();

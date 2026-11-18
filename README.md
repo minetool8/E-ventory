@@ -44,3 +44,6 @@ Bars stack in the bottom-right corner (bottom to top): hunger, thirst, hearts, a
 ## Containers + Petite Inventory
 - Opening a chest, barrel, trapped chest or ender chest now opens the grid inventory with that container's GUI in the middle column (where the player model normally is). Curios, armor, backpack, crafting and inventory stay as they are. The window widens to fit the 9-wide container. Shulker boxes, furnaces, crafting tables and modded menus are untouched and keep their normal screens.
 - Petite Inventory (optional): when installed, the grid inventory screen is switched into Petite's grid layout once per session (config `petiteAutoEnable`), so multi-slot items work in the inventory and the Backpacked backpack. Locked backpack slots are skipped by Petite through Backpacked's own slot class.
+
+## Effects hidden
+Active effects are not shown anywhere: the HUD effect icons (vanilla and any other mod's potion/effect overlay) and the effect list in inventory screens (including creative) are cancelled. Toggle with `hideEffects` in config/gridinventory-client.toml. The grid inventory screen never showed effects.
