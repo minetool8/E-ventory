@@ -16,6 +16,8 @@ public final class GuiLayout {
     public static final int CRAFT_W = 90;
     public static final int CRAFT_H = 44;
 
+    public final int containerRows, centerW;
+    public final int contX, contY, contW, contH;
     public final int bpCols, bpRows;
     public final int curioCount, curioCols, curioRows;
     public final int curioX, curioY, curioW, curioH;
@@ -24,7 +26,9 @@ public final class GuiLayout {
     public final int frameY, frameH, invY, invH;
     public final int width, height;
 
-    public GuiLayout(boolean hasBackpack, int cols, int rows, int curioCount) {
+    public GuiLayout(boolean hasBackpack, int cols, int rows, int curioCount, int containerRows) {
+        this.containerRows = containerRows;
+        this.centerW = containerRows > 0 ? 9 * SLOT + 16 : PLAYER_W;
         this.bpCols = hasBackpack ? cols : 9;
         this.bpRows = hasBackpack ? rows : 5;
         this.curioCount = curioCount;
@@ -36,7 +40,7 @@ public final class GuiLayout {
         this.curioX = 0;
 
         this.playerX = curioW + (curioW > 0 ? 6 : 0);
-        this.armorX = playerX + PLAYER_W + 8;
+        this.armorX = playerX + centerW + 8;
         this.rightX = armorX + ARMOR_CELL + 12;
         this.rightW = Math.max(bpCols, 9) * SLOT + 16;
 
@@ -45,12 +49,19 @@ public final class GuiLayout {
         this.invY = frameY + frameH + 6;
         this.invH = 3 * SLOT + 4 + SLOT + 16;
 
+        this.contX = playerX;
+        this.contY = frameY;
+        this.contW = centerW;
+        this.contH = containerRows * SLOT + 16;
+
+        int baseHeight = invY + invH;
+        int contNeed = containerRows > 0 ? TAB_H + contH + 6 + CRAFT_H : 0;
         this.width = rightX + rightW;
-        this.height = invY + invH;
+        this.height = Math.max(baseHeight, contNeed);
         this.armorY = (height - ARMOR_CELL * 4) / 2;
         this.curioY = Math.max(0, (height - curioH) / 2);
 
-        this.craftX = playerX + (PLAYER_W - CRAFT_W) / 2;
+        this.craftX = playerX + (centerW - CRAFT_W) / 2;
         this.craftY = height - CRAFT_H;
     }
 
@@ -67,6 +78,10 @@ public final class GuiLayout {
 
     public int curioSlotX(int n) { return curioX + 4 + (n % curioCols) * SLOT + 1; }
     public int curioSlotY(int n) { return curioY + 4 + (n / curioCols) * SLOT + 1; }
+
+    // opened container (chest etc.) shown where the player model normally is
+    public int extX(int c) { return contX + (contW - 9 * SLOT) / 2 + c * SLOT + 1; }
+    public int extY(int r) { return contY + 8 + r * SLOT + 1; }
 
     // crafting: 2x2 grid, arrow, result
     public int craftInX(int c) { return craftX + 4 + c * SLOT + 1; }

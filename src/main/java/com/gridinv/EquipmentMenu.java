@@ -20,6 +20,7 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ChestMenu;
 import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.inventory.ResultContainer;
 import net.minecraft.world.inventory.ResultSlot;
@@ -50,6 +51,9 @@ public class EquipmentMenu extends AbstractContainerMenu {
     public final GuiLayout layout;
     public final boolean hasBackpack;
     public final Component backpackTitle;
+    public final int externalRows;
+    public int extStart, extEnd;
+    private Container external;
 
     public final int armorStart = 0, mainStart = 4, hotbarStart = 31, hotbarEnd = 40;
     public final int backpackStart = 40;
@@ -63,7 +67,7 @@ public class EquipmentMenu extends AbstractContainerMenu {
 
     /** Everything the client needs to build an identical menu. */
     private record Data(boolean hasBackpack, int cols, int rows, UnlockableSlots unlocked,
-                        Component title, List<Pair<String, Integer>> curios) {
+                        Component title, List<Pair<String, Integer>> curios, int containerRows) {
         void write(FriendlyByteBuf buf) {
             buf.writeBoolean(hasBackpack);
             buf.writeVarInt(cols);
@@ -77,6 +81,7 @@ public class EquipmentMenu extends AbstractContainerMenu {
                 buf.writeUtf(c.getFirst());
                 buf.writeVarInt(c.getSecond());
             }
+            buf.writeVarInt(containerRows);
         }
 
         static Data read(FriendlyByteBuf buf) {
@@ -92,14 +97,27 @@ public class EquipmentMenu extends AbstractContainerMenu {
             int n = buf.readVarInt();
             List<Pair<String, Integer>> curios = new ArrayList<>();
             for (int i = 0; i < n; i++) curios.add(Pair.of(buf.readUtf(), buf.readVarInt()));
-            return new Data(has, cols, rows, unlocked, title, curios);
+            int containerRows = buf.readVarInt();
+            return new Data(has, cols, rows, unlocked, title, curios, containerRows);
         }
     }
 
     // ------------------------------------------------------------------ server
 
+    /** Open the grid inventory with an external container (chest, barrel...) in the middle. */
+    public static void openWithContainer(ServerPlayer player, Container container, int rows) {
+        Data base = collect(player);
+        Data data = new Data(base.hasBackpack, base.cols, base.rows, base.unlocked, base.title, base.curios, rows);
+        // keep the chest 'open' while we swap menus so its lid does not close and reopen
+        container.startOpen(player);
+        openMenu(player, data, container);
+    }
+
     public static void open(ServerPlayer player) {
-        Data data = collect(player);
+        openMenu(player, collect(player), null);
+    }
+
+    private static void openMenu(ServerPlayer player, Data data, Container external) {
         Container backpack = null;
         if (data.hasBackpack) {
             int idx = BackpackHelper.getSelectedBackpackIndex(player);
@@ -107,7 +125,7 @@ public class EquipmentMenu extends AbstractContainerMenu {
         }
         final Container bp = backpack;
         NetworkHooks.openScreen(player,
-                new SimpleMenuProvider((id, inv, p) -> new EquipmentMenu(id, inv, data, bp), Component.empty()),
+                new SimpleMenuProvider((id, inv, p) -> new EquipmentMenu(id, inv, data, bp, external), Component.empty()),
                 data::write);
     }
 
@@ -139,25 +157,26 @@ public class EquipmentMenu extends AbstractContainerMenu {
                 new TreeMap<>(handler.getCurios()).forEach((id, sh) -> {
                     if (sh.isVisible() && sh.getSlots() > 0) curios.add(Pair.of(id, sh.getSlots()));
                 }));
-        return new Data(has, cols, rows, unlocked, title, curios);
+        return new Data(has, cols, rows, unlocked, title, curios, 0);
     }
 
     // ------------------------------------------------------------------ client
 
     public EquipmentMenu(int id, Inventory inv, FriendlyByteBuf buf) {
-        this(id, inv, Data.read(buf), null);
+        this(id, inv, Data.read(buf), null, null);
     }
 
     // ------------------------------------------------------------------ shared
 
-    private EquipmentMenu(int id, Inventory inv, Data data, Container backpackContainer) {
+    private EquipmentMenu(int id, Inventory inv, Data data, Container backpackContainer, Container externalContainer) {
         super(GridInventoryMod.EQUIPMENT_MENU.get(), id);
         this.player = inv.player;
         this.hasBackpack = data.hasBackpack;
         this.backpackTitle = data.title;
 
         int curioTotal = data.curios.stream().mapToInt(Pair::getSecond).sum();
-        this.layout = new GuiLayout(data.hasBackpack, data.cols, data.rows, curioTotal);
+        this.layout = new GuiLayout(data.hasBackpack, data.cols, data.rows, curioTotal, data.containerRows);
+        this.externalRows = data.containerRows;
         GuiLayout L = this.layout;
 
         // armor (container indexes 39..36 = head..feet)
@@ -212,6 +231,15 @@ public class EquipmentMenu extends AbstractContainerMenu {
             for (int c = 0; c < 2; c++)
                 addSlot(new Slot(craftSlots, c + r * 2, L.craftInX(c), L.craftInY(r)));
         craftEnd = slots.size();
+
+        // opened container (chest/barrel) in the middle column
+        extStart = slots.size();
+        if (externalRows > 0) {
+            external = externalContainer != null ? externalContainer : new SimpleContainer(externalRows * 9);
+            for (int i = 0; i < externalRows * 9; i++)
+                addSlot(new Slot(external, i, L.extX(i % 9), L.extY(i / 9)));
+        }
+        extEnd = slots.size();
     }
 
     // ---------------------------------------------------------------- crafting
@@ -242,6 +270,7 @@ public class EquipmentMenu extends AbstractContainerMenu {
         super.removed(p);
         resultSlots.clearContent();
         if (!p.level().isClientSide) clearContainer(p, craftSlots);
+        if (external != null) external.stopOpen(p);
     }
 
     @Override
@@ -257,8 +286,9 @@ public class EquipmentMenu extends AbstractContainerMenu {
             moved = moveItemStackTo(stack, mainStart, hotbarEnd, true);
         } else {
             // inventory -> armor, curios, backpack, then main <-> hotbar
+            if (extEnd > extStart) moved = moveItemStackTo(stack, extStart, extEnd, false);
             EquipmentSlot eq = Mob.getEquipmentSlotForItem(stack);
-            if (eq.getType() == EquipmentSlot.Type.ARMOR) {
+            if (!moved && eq.getType() == EquipmentSlot.Type.ARMOR) {
                 int ai = 3 - eq.getIndex();
                 if (!slots.get(ai).hasItem()) moved = moveItemStackTo(stack, ai, ai + 1, false);
             }
@@ -279,5 +309,5 @@ public class EquipmentMenu extends AbstractContainerMenu {
         return copy;
     }
 
-    @Override public boolean stillValid(Player player) { return true; }
+    @Override public boolean stillValid(Player player) { return external == null || external.stillValid(player); }
 }

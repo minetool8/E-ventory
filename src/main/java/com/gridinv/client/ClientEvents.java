@@ -2,7 +2,9 @@ package com.gridinv.client;
 
 import com.gridinv.GridInventoryMod;
 import com.gridinv.OpenRequest;
+import net.minecraft.client.gui.screens.inventory.ContainerScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.world.inventory.ChestMenu;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ScreenEvent;
@@ -26,6 +28,12 @@ public class ClientEvents {
     public static class ForgeBus {
         @SubscribeEvent
         public static void onScreenOpening(ScreenEvent.Opening event) {
+            // chest / barrel / ender chest: the server swaps it for our screen; remember the title
+            if (event.getNewScreen() instanceof ContainerScreen cs && cs.getMenu().getClass() == ChestMenu.class) {
+                EquipmentScreen.pendingContainerTitle = cs.getTitle();
+                event.setCanceled(true);
+                return;
+            }
             if (event.getNewScreen() instanceof InventoryScreen) {
                 event.setCanceled(true);
                 GridInventoryMod.CHANNEL.sendToServer(new OpenRequest());

@@ -27,6 +27,8 @@ public final class HudConfig {
         public final ForgeConfigSpec.IntValue barRowSpacing;
         public final ForgeConfigSpec.IntValue taczReserveBottom;
         public final ForgeConfigSpec.BooleanValue hideExperienceBar;
+        public final ForgeConfigSpec.BooleanValue logOverlayIds;
+        public final ForgeConfigSpec.BooleanValue petiteAutoEnable;
         public final ForgeConfigSpec.IntValue staminaYOffset;
 
         Client(ForgeConfigSpec.Builder b) {
@@ -51,6 +53,10 @@ public final class HudConfig {
             staminaYOffset = b.comment("ParCool stamina bar: pixels to pull DOWN from where ParCool draws it (negative = up).",
                             "Keeps its horizontal position. 0 = untouched.")
                     .defineInRange("staminaYOffset", 20, -300, 300);
+            petiteAutoEnable = b.comment("If Petite Inventory is installed, switch its grid layout on for the grid inventory screen.")
+                    .define("petiteAutoEnable", true);
+            logOverlayIds = b.comment("Log every HUD overlay id once (helps find which mod draws something you want hidden).")
+                    .define("logOverlayIds", true);
             b.pop();
         }
     }

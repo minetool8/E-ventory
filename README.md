@@ -40,3 +40,7 @@ Jar appears in build/libs/. Drop it in your mods folder together with Forge, Cur
 
 ## Update: bottom-right survival stack
 Bars stack in the bottom-right corner (bottom to top): hunger, thirst, hearts, armor, air. Temperature, wetness and body-damage icons sit to the left of the stack. The experience bar and vanilla hotbar are hidden. `taczReserveBottom` (default 44) keeps the bottom-right corner free for the TACZ gun HUD; `barRowSpacing` sets row spacing.
+
+## Containers + Petite Inventory
+- Opening a chest, barrel, trapped chest or ender chest now opens the grid inventory with that container's GUI in the middle column (where the player model normally is). Curios, armor, backpack, crafting and inventory stay as they are. The window widens to fit the 9-wide container. Shulker boxes, furnaces, crafting tables and modded menus are untouched and keep their normal screens.
+- Petite Inventory (optional): when installed, the grid inventory screen is switched into Petite's grid layout once per session (config `petiteAutoEnable`), so multi-slot items work in the inventory and the Backpacked backpack. Locked backpack slots are skipped by Petite through Backpacked's own slot class.

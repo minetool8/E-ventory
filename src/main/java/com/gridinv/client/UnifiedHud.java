@@ -1,8 +1,11 @@
 package com.gridinv.client;
 
+import com.gridinv.GridInventoryMod;
 import com.gridinv.HudConfig;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.Util;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
@@ -32,6 +35,10 @@ public final class UnifiedHud {
 
     private static final ResourceLocation PARCOOL_STAMINA = new ResourceLocation("parcool", "hud.stamina.host");
 
+    private static final Logger LOGGER = LogManager.getLogger("gridinventory");
+    private static final ResourceLocation RING_ID = new ResourceLocation(GridInventoryMod.MODID, "ring");
+    private static final Set<ResourceLocation> SEEN = new HashSet<>();
+
     private static final Set<ResourceLocation> PUSHED = new HashSet<>();
     /** ForgeGui leftHeight/rightHeight values to restore after each moved bar. */
     private static final Map<ResourceLocation, int[]> SAVED = new HashMap<>();
@@ -54,6 +61,7 @@ public final class UnifiedHud {
 
     public static void onOverlayPre(RenderGuiOverlayEvent.Pre e) {
         ResourceLocation id = e.getOverlay().id();
+        if (HudConfig.CLIENT.logOverlayIds.get() && SEEN.add(id)) LOGGER.info("HUD overlay: {}", id);
 
         // ParCool stamina: same place as before, just pulled down toward the bottom.
         if (id.equals(PARCOOL_STAMINA)) {
@@ -68,7 +76,12 @@ public final class UnifiedHud {
         }
 
         if (!enabled()) return;
-        if (id.equals(VanillaGuiOverlay.HOTBAR.id())) { e.setCanceled(true); return; }
+        // vanilla hotbar, plus any other mod's hotbar-style overlay (everything except our ring)
+        if (id.equals(VanillaGuiOverlay.HOTBAR.id())
+                || (!id.equals(RING_ID) && id.getPath().contains("hotbar"))) {
+            e.setCanceled(true);
+            return;
+        }
         if (id.equals(VanillaGuiOverlay.EXPERIENCE_BAR.id()) && HudConfig.CLIENT.hideExperienceBar.get()) {
             e.setCanceled(true);
             return;

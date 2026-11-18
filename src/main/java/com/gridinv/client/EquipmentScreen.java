@@ -44,11 +44,16 @@ public class EquipmentScreen extends AbstractContainerScreen<EquipmentMenu> {
             new ResourceLocation(GridInventoryMod.MODID, "textures/gui/armor_legs.png"),
             new ResourceLocation(GridInventoryMod.MODID, "textures/gui/armor_feet.png")};
 
+    /** Title of the container that was just opened (captured before the vanilla screen is cancelled). */
+    public static Component pendingContainerTitle = Component.empty();
+
     private final GuiLayout L;
+    private final Component containerTitle;
 
     public EquipmentScreen(EquipmentMenu menu, Inventory inv, Component title) {
         super(menu, inv, Component.empty());
         this.L = menu.layout;
+        this.containerTitle = pendingContainerTitle;
         this.imageWidth = L.width;
         this.imageHeight = L.height;
     }
@@ -59,6 +64,12 @@ public class EquipmentScreen extends AbstractContainerScreen<EquipmentMenu> {
     @Override
     public void renderBackground(GuiGraphics g) {
         g.fillGradient(0, 0, width, height, 0x9910131A, 0xB00A0C11);
+    }
+
+    @Override
+    protected void init() {
+        super.init();
+        PetiteCompat.enableFor(this);
     }
 
     @Override protected void renderLabels(GuiGraphics g, int mx, int my) { /* no vanilla labels */ }
@@ -100,7 +111,7 @@ public class EquipmentScreen extends AbstractContainerScreen<EquipmentMenu> {
         int x = leftPos, y = topPos;
 
         drawCurios(g, x, y);
-        drawPlayer(g, x, y, mx, my);
+        if (menu.externalRows > 0) drawContainer(g, x, y); else drawPlayer(g, x, y, mx, my);
         drawCrafting(g, x, y);
         drawArmorHolder(g, x, y);
         drawBackpack(g, x, y);
@@ -128,11 +139,30 @@ public class EquipmentScreen extends AbstractContainerScreen<EquipmentMenu> {
     }
 
     private void drawPlayer(GuiGraphics g, int x, int y, int mx, int my) {
-        int cx = x + L.playerX + GuiLayout.PLAYER_W / 2;
+        int cx = x + L.playerX + L.centerW / 2;
         int feetY = y + L.craftY - 8;
         int scale = Math.min(72, (int) ((L.craftY - 22) / 1.85f));
         InventoryScreen.renderEntityInInventoryFollowsMouse(
                 g, cx, feetY, scale, (float) (cx - mx), (float) (feetY - (int) (scale * 1.62f) - my), minecraft.player);
+    }
+
+    /** The opened chest/barrel, drawn where the player model usually is. */
+    private void drawContainer(GuiGraphics g, int x, int y) {
+        int fx = x + L.contX, fy = y + L.contY;
+        panel(g, fx, fy, L.contW, L.contH);
+        g.fill(fx + 3, fy + 2, fx + L.contW - 3, fy + 3, C_ACCENT_DIM);
+
+        int tabW = Math.min(L.contW - 20, Math.max(80, font.width(containerTitle) + 24));
+        int tabX = fx + (L.contW - tabW) / 2, tabY = fy - GuiLayout.TAB_H;
+        g.fill(tabX, tabY, tabX + tabW, fy + 1, C_EDGE);
+        g.fill(tabX + 1, tabY + 1, tabX + tabW - 1, fy + 1, C_RIM);
+        g.fillGradient(tabX + 2, tabY + 2, tabX + tabW - 2, fy + 1, C_TOP, C_BOT);
+        g.drawCenteredString(font, containerTitle, tabX + tabW / 2, tabY + 4, C_TEXT);
+
+        for (int i = menu.extStart; i < menu.extEnd; i++) {
+            Slot s = menu.slots.get(i);
+            slotBg(g, x + s.x - 1, y + s.y - 1);
+        }
     }
 
     private void drawCrafting(GuiGraphics g, int x, int y) {
