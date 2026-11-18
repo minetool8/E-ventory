@@ -47,3 +47,6 @@ Bars stack in the bottom-right corner (bottom to top): hunger, thirst, hearts, a
 
 ## Effects hidden
 Active effects are not shown anywhere: the HUD effect icons (vanilla and any other mod's potion/effect overlay) and the effect list in inventory screens (including creative) are cancelled. Toggle with `hideEffects` in config/gridinventory-client.toml. The grid inventory screen never showed effects.
+
+## Rummage compatibility
+Rummage works on any menu through the generic slot/menu/screen classes, so the container slots in the middle column are rummaged exactly like a normal chest (masks, hover search, sounds). The chest swap runs at the lowest event priority so Rummage sees the original menu close and our menu open in a clean order.
