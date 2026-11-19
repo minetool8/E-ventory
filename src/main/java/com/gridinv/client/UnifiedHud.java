@@ -83,13 +83,20 @@ public final class UnifiedHud {
             return;
         }
 
-        if (!enabled()) return;
         // vanilla hotbar, plus any other mod's hotbar-style overlay (everything except our ring)
-        if (id.equals(VanillaGuiOverlay.HOTBAR.id())
-                || (!id.equals(RING_ID) && id.getPath().contains("hotbar"))) {
+        if (HudConfig.CLIENT.removeVanillaHotbar.get()
+                && (id.equals(VanillaGuiOverlay.HOTBAR.id())
+                    || (!id.equals(RING_ID) && id.getPath().contains("hotbar")))) {
             e.setCanceled(true);
             return;
         }
+        // the held item's name popping up above the hotbar
+        if (HudConfig.CLIENT.hideHeldItemName.get() && id.equals(VanillaGuiOverlay.ITEM_NAME.id())) {
+            e.setCanceled(true);
+            return;
+        }
+
+        if (!enabled()) return;
         if (id.equals(VanillaGuiOverlay.EXPERIENCE_BAR.id()) && HudConfig.CLIENT.hideExperienceBar.get()) {
             e.setCanceled(true);
             return;
@@ -162,7 +169,7 @@ public final class UnifiedHud {
     private static final IGuiOverlay RING = (gui, g, partialTick, width, height) -> {
         Minecraft mc = gui.getMinecraft();
         if (!enabled() || mc.options.hideGui || mc.player == null || mc.gameMode == null
-                || mc.gameMode.getPlayerMode() == GameType.SPECTATOR) return;
+                || mc.gameMode.getPlayerMode() == GameType.SPECTATOR || SpatialCompat.hidesHud()) return;
         Inventory inv = mc.player.getInventory();
         int sel = inv.selected;
 
@@ -237,15 +244,15 @@ public final class UnifiedHud {
         pose.pushPose();
         pose.translate(centerX - 8f * scale, centerY - 8f * scale, 0f);
         pose.scale(scale, scale, 1f);
-        g.fill(-2, -2, 18, 18, highlight > 0.5f ? 0x66000000 : 0x33000000);
-        int a = (int) (highlight * 0xCC);
-        if (a > 0) {
-            int c = (a << 24) | 0xFFFFFF;
-            g.fill(-2, -2, 18, -1, c);
-            g.fill(-2, 17, 18, 18, c);
-            g.fill(-2, -1, -1, 17, c);
-            g.fill(17, -1, 18, 17, c);
-        }
+        // dark glass tile with a thin warm-white outline; the selected tile glows and gets an amber tick
+        g.fill(-2, -2, 18, 18, highlight > 0.5f ? 0xCC090908 : 0x88090908);
+        int a = 0x30 + (int) (highlight * 0xBE);
+        int c = (a << 24) | 0xE6E2D3;
+        g.fill(-2, -2, 18, -1, c);
+        g.fill(-2, 17, 18, 18, c);
+        g.fill(-2, -1, -1, 17, c);
+        g.fill(17, -1, 18, 17, c);
+        if (highlight > 0.5f) g.fill(0, 19, 16, 20, 0xFFD6A24A);
         if (!stack.isEmpty()) {
             g.renderItem(mc.player, stack, 0, 0, seed);
             g.renderItemDecorations(mc.font, stack, 0, 0);

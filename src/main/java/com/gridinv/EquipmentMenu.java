@@ -16,6 +16,9 @@ import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.SlotAccess;
+import net.minecraft.world.inventory.ClickAction;
+import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -271,6 +274,36 @@ public class EquipmentMenu extends AbstractContainerMenu {
         resultSlots.clearContent();
         if (!p.level().isClientSide) clearContainer(p, craftSlots);
         if (external != null) external.stopOpen(p);
+    }
+
+    /**
+     * Item-on-item click behaviour (a battery on a flashlight, items on bundles, ...). This is exactly what
+     * vanilla's doClick does first, done here so it always runs for our menu - on the client and the server -
+     * even when another mod's click hooks would otherwise swallow the click.
+     */
+    @Override
+    public void clicked(int slotId, int button, ClickType type, Player p) {
+        if (type == ClickType.PICKUP && (button == 0 || button == 1) && slotId >= 0 && slotId < slots.size()) {
+            Slot slot = slots.get(slotId);
+            ItemStack carried = getCarried();
+            ItemStack slotStack = slot.getItem();
+            if (!carried.isEmpty() && !slotStack.isEmpty()) {
+                ClickAction action = button == 0 ? ClickAction.PRIMARY : ClickAction.SECONDARY;
+                SlotAccess carriedAccess = new SlotAccess() {
+                    @Override public ItemStack get() { return getCarried(); }
+                    @Override public boolean set(ItemStack s) { setCarried(s); return true; }
+                };
+                var features = p.level().enabledFeatures();
+                boolean handled = (carried.isItemEnabled(features) && carried.overrideStackedOnOther(slot, action, p))
+                        || (slotStack.isItemEnabled(features)
+                            && slotStack.overrideOtherStackedOnMe(carried, slot, action, p, carriedAccess));
+                if (handled) {
+                    slot.setChanged();
+                    return;
+                }
+            }
+        }
+        super.clicked(slotId, button, type, p);
     }
 
     @Override

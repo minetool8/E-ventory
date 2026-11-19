@@ -1,4 +1,4 @@
-# Grid Inventory (Forge 1.20.1)
+# E-ventory (Forge 1.20.1)
 
 Replaces the **E** inventory with: Curios slots | big player | armor column | Backpacked backpack above your inventory.
 
@@ -50,3 +50,12 @@ Active effects are not shown anywhere: the HUD effect icons (vanilla and any oth
 
 ## Rummage compatibility
 Rummage works on any menu through the generic slot/menu/screen classes, so the container slots in the middle column are rummaged exactly like a normal chest (masks, hover search, sounds). The chest swap runs at the lowest event priority so Rummage sees the original menu close and our menu open in a clean order.
+
+## E-ventory update notes
+- Vanilla hotbar removed unconditionally (`removeVanillaHotbar`, independent of `hudEnabled`); the held-item name popup is removed (`hideHeldItemName`).
+- Tooltips fixed: the screen's render() was skipping the background and tooltip calls that concrete container screens must make themselves.
+- Creative mode: E now opens the vanilla creative inventory; survival uses E-ventory. Spectators keep the vanilla behaviour.
+- Item-on-item clicks (battery -> flashlight, bundles) are handled inside the E-ventory menu itself, left or right click, client and server, so they no longer depend on Petite/Flashlight Fix click hooks.
+- Spatial GUI: the screen is a normal container screen, so Spatial hooks it (enable "containers"/"inventory" in Spatial's config); our dark wash is skipped while Spatial draws the plane, and the ring hotbar hides when Spatial hides the HUD.
+- TLOU2-style UI: charcoal wash + vignette, hairline warm-white frames with corner brackets, amber accent, line-art equipment icons, small-caps headers, restyled ring hotbar. Hearts/hunger/thirst icons are vanilla/Legendary Survival Overhaul textures and are unchanged (they would need a resource pack).
+- Libs: Backpacked 3.0.9.1 (identical API to 3.0.9).

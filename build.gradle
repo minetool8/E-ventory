@@ -7,7 +7,7 @@ plugins {
 
 version = '1.0.0'
 group = 'com.gridinv'
-base { archivesName = 'gridinventory-1.20.1' }
+base { archivesName = 'eventory-1.20.1' }
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
@@ -32,7 +32,7 @@ dependencies {
 
     // Compile against the real mods (deobfuscated to Mojang names).
     implementation fg.deobf('local:curios:5.14.1')
-    implementation fg.deobf('local:backpacked:3.0.9')
+    implementation fg.deobf('local:backpacked:3.0.9.1')
     // Backpacked needs MrCrayfish's Framework to compile and run.
     // Put it in libs/ as framework-0.8.0.jar (any 1.20.1 build >= 0.8.0).
     implementation fg.deobf('local:framework:0.8.0')

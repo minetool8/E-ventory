@@ -5,8 +5,8 @@ license="MIT"
 [[mods]]
 modId="gridinventory"
 version="${version}"
-displayName="Grid Inventory"
-description='''Replaces the E inventory with a layout showing the player, Curios slots, armor, a Backpacked backpack and the inventory.'''
+displayName="E-ventory"
+description='''E-ventory: a custom survival inventory (E screen) with Curios, armor, a Backpacked backpack, crafting and opened containers, plus a ring hotbar HUD.'''
 
 [[dependencies.gridinventory]]
 modId="forge"
@@ -49,3 +49,10 @@ mandatory=false
 versionRange="[1.1,)"
 ordering="AFTER"
 side="BOTH"
+
+[[dependencies.gridinventory]]
+modId="spatial_gui"
+mandatory=false
+versionRange="[1.0,)"
+ordering="AFTER"
+side="CLIENT"

@@ -2,6 +2,7 @@ package com.gridinv.client;
 
 import com.gridinv.GridInventoryMod;
 import com.gridinv.OpenRequest;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.ContainerScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.world.inventory.ChestMenu;
@@ -42,6 +43,11 @@ public class ClientEvents {
                 return;
             }
             if (event.getNewScreen() instanceof InventoryScreen) {
+                Minecraft mc = Minecraft.getInstance();
+                // creative keeps the vanilla creative inventory (vanilla opens it from InventoryScreen);
+                // spectators have no server-side inventory to open
+                if (mc.player == null || mc.player.isSpectator()
+                        || (mc.gameMode != null && mc.gameMode.hasInfiniteItems())) return;
                 event.setCanceled(true);
                 GridInventoryMod.CHANNEL.sendToServer(new OpenRequest());
             }

@@ -30,6 +30,8 @@ public final class HudConfig {
         public final ForgeConfigSpec.BooleanValue logOverlayIds;
         public final ForgeConfigSpec.BooleanValue petiteAutoEnable;
         public final ForgeConfigSpec.BooleanValue hideEffects;
+        public final ForgeConfigSpec.BooleanValue removeVanillaHotbar;
+        public final ForgeConfigSpec.BooleanValue hideHeldItemName;
         public final ForgeConfigSpec.IntValue staminaYOffset;
 
         Client(ForgeConfigSpec.Builder b) {
@@ -54,6 +56,10 @@ public final class HudConfig {
             staminaYOffset = b.comment("ParCool stamina bar: pixels to pull DOWN from where ParCool draws it (negative = up).",
                             "Keeps its horizontal position. 0 = untouched.")
                     .defineInRange("staminaYOffset", 20, -300, 300);
+            removeVanillaHotbar = b.comment("Always remove the vanilla hotbar (and any other mod's hotbar overlay), even if hudEnabled is false.")
+                    .define("removeVanillaHotbar", true);
+            hideHeldItemName = b.comment("Hide the held item's name that pops up above the hotbar for a few seconds.")
+                    .define("hideHeldItemName", true);
             hideEffects = b.comment("Hide active potion/status effect icons everywhere (HUD and inventory screens).")
                     .define("hideEffects", true);
             petiteAutoEnable = b.comment("If Petite Inventory is installed, switch its grid layout on for the grid inventory screen.")
