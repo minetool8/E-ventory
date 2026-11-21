@@ -294,16 +294,29 @@ public class EquipmentMenu extends AbstractContainerMenu {
                     @Override public boolean set(ItemStack s) { setCarried(s); return true; }
                 };
                 var features = p.level().enabledFeatures();
-                boolean handled = (carried.isItemEnabled(features) && carried.overrideStackedOnOther(slot, action, p))
-                        || (slotStack.isItemEnabled(features)
-                            && slotStack.overrideOtherStackedOnMe(carried, slot, action, p, carriedAccess));
-                if (handled) {
+                String cn = itemName(carried), sn = itemName(slotStack);
+                boolean interesting = (cn.contains("battery") || cn.contains("flashlight"))
+                        && (sn.contains("battery") || sn.contains("flashlight"));
+                boolean carriedHandled = carried.isItemEnabled(features) && carried.overrideStackedOnOther(slot, action, p);
+                boolean slotHandled = !carriedHandled && slotStack.isItemEnabled(features)
+                        && slotStack.overrideOtherStackedOnMe(carried, slot, action, p, carriedAccess);
+                if (interesting && HudConfig.debugItemClicksEnabled()) {
+                    p.displayClientMessage(Component.literal("[E-ventory] " + (p.level().isClientSide ? "client" : "server")
+                            + ": " + cn + " on " + sn + " (" + action + ") -> carried item handled=" + carriedHandled
+                            + ", slot item handled=" + slotHandled), false);
+                }
+                if (carriedHandled || slotHandled) {
                     slot.setChanged();
                     return;
                 }
             }
         }
         super.clicked(slotId, button, type, p);
+    }
+
+    private static String itemName(ItemStack stack) {
+        var key = net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(stack.getItem());
+        return key == null ? "" : key.toString();
     }
 
     @Override

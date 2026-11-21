@@ -59,6 +59,23 @@ public final class UnifiedHud {
         return id.getNamespace().equals(LSO) && id.getPath().equals(path);
     }
 
+    private static boolean isHotbar(ResourceLocation id) {
+        return id.equals(VanillaGuiOverlay.HOTBAR.id())
+                || (!id.equals(RING_ID) && id.getPath().contains("hotbar"));
+    }
+
+    /**
+     * Runs at HIGHEST priority, before other mods see the event. Petite Inventory draws its own copy of the
+     * hotbar from inside its (normal-priority) overlay handler whenever a multi-slot item such as a TACZ gun
+     * merges hotbar slots; cancelling here means that handler never runs. (Petite only skips this when a mod
+     * with id "unifiedui" is loaded.)
+     */
+    public static void onOverlayPreFirst(RenderGuiOverlayEvent.Pre e) {
+        if (HudConfig.CLIENT.removeVanillaHotbar.get() && isHotbar(e.getOverlay().id())) {
+            e.setCanceled(true);
+        }
+    }
+
     public static void onOverlayPre(RenderGuiOverlayEvent.Pre e) {
         ResourceLocation id = e.getOverlay().id();
         if (HudConfig.CLIENT.logOverlayIds.get() && SEEN.add(id)) LOGGER.info("HUD overlay: {}", id);
@@ -84,9 +101,7 @@ public final class UnifiedHud {
         }
 
         // vanilla hotbar, plus any other mod's hotbar-style overlay (everything except our ring)
-        if (HudConfig.CLIENT.removeVanillaHotbar.get()
-                && (id.equals(VanillaGuiOverlay.HOTBAR.id())
-                    || (!id.equals(RING_ID) && id.getPath().contains("hotbar")))) {
+        if (HudConfig.CLIENT.removeVanillaHotbar.get() && isHotbar(id)) {
             e.setCanceled(true);
             return;
         }

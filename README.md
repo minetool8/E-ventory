@@ -59,3 +59,11 @@ Rummage works on any menu through the generic slot/menu/screen classes, so the c
 - Spatial GUI: the screen is a normal container screen, so Spatial hooks it (enable "containers"/"inventory" in Spatial's config); our dark wash is skipped while Spatial draws the plane, and the ring hotbar hides when Spatial hides the HUD.
 - TLOU2-style UI: charcoal wash + vignette, hairline warm-white frames with corner brackets, amber accent, line-art equipment icons, small-caps headers, restyled ring hotbar. Hearts/hunger/thirst icons are vanilla/Legendary Survival Overhaul textures and are unchanged (they would need a resource pack).
 - Libs: Backpacked 3.0.9.1 (identical API to 3.0.9).
+
+## Hotbar returning while holding a TACZ gun (fixed)
+Petite Inventory merges hotbar slots for multi-slot items like guns and then draws its own hotbar copy from inside its overlay handler (it only skips this if a mod with id `unifiedui` is loaded). E-ventory now cancels the hotbar overlay at HIGHEST priority so Petite's handler never runs.
+
+## Battery / flashlight diagnostic
+Clicking a battery onto a flashlight in the E-ventory screen prints a chat line from the client and from the server, e.g.
+`[E-ventory] server: flashierflashlights:battery on flashierflashlights:flashlight (SECONDARY) -> carried item handled=false, slot item handled=false`
+It reports whether the battery item or the flashlight item accepted the click. Disable with `debugItemClicks = false` in config/gridinventory-client.toml once batteries work.

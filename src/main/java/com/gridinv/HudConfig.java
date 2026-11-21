@@ -16,6 +16,11 @@ public final class HudConfig {
 
     private HudConfig() {}
 
+    /** Client config may not be loaded on a dedicated server; default to off there. */
+    public static boolean debugItemClicksEnabled() {
+        try { return CLIENT.debugItemClicks.get(); } catch (Throwable t) { return false; }
+    }
+
     public static class Client {
         public final ForgeConfigSpec.BooleanValue hudEnabled;
         public final ForgeConfigSpec.IntValue hudMargin;
@@ -32,6 +37,7 @@ public final class HudConfig {
         public final ForgeConfigSpec.BooleanValue hideEffects;
         public final ForgeConfigSpec.BooleanValue removeVanillaHotbar;
         public final ForgeConfigSpec.BooleanValue hideHeldItemName;
+        public final ForgeConfigSpec.BooleanValue debugItemClicks;
         public final ForgeConfigSpec.IntValue staminaYOffset;
 
         Client(ForgeConfigSpec.Builder b) {
@@ -58,6 +64,9 @@ public final class HudConfig {
                     .defineInRange("staminaYOffset", 20, -300, 300);
             removeVanillaHotbar = b.comment("Always remove the vanilla hotbar (and any other mod's hotbar overlay), even if hudEnabled is false.")
                     .define("removeVanillaHotbar", true);
+            debugItemClicks = b.comment("Chat a short diagnostic when you click a battery onto a flashlight in the E-ventory screen.",
+                            "Turn off once batteries work for you.")
+                    .define("debugItemClicks", true);
             hideHeldItemName = b.comment("Hide the held item's name that pops up above the hotbar for a few seconds.")
                     .define("hideHeldItemName", true);
             hideEffects = b.comment("Hide active potion/status effect icons everywhere (HUD and inventory screens).")
