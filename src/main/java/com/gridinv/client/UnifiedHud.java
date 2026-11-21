@@ -71,9 +71,25 @@ public final class UnifiedHud {
      * with id "unifiedui" is loaded.)
      */
     public static void onOverlayPreFirst(RenderGuiOverlayEvent.Pre e) {
-        if (HudConfig.CLIENT.removeVanillaHotbar.get() && isHotbar(e.getOverlay().id())) {
+        ResourceLocation id = e.getOverlay().id();
+        if (HudConfig.CLIENT.removeVanillaHotbar.get() && isHotbar(id)) {
+            e.setCanceled(true);
+        } else if (!id.equals(RING_ID) && matchesHiddenKeyword(id)) {
             e.setCanceled(true);
         }
+    }
+
+    /** Word-wise match so "kill" hides "kill_amount_overlay" but not "skills". */
+    private static boolean matchesHiddenKeyword(ResourceLocation id) {
+        java.util.List<? extends String> words = HudConfig.CLIENT.hiddenOverlayKeywords.get();
+        if (words.isEmpty()) return false;
+        for (String token : id.getPath().toLowerCase(java.util.Locale.ROOT).split("[^a-z0-9]+")) {
+            for (String w : words) {
+                String k = w.toLowerCase(java.util.Locale.ROOT).trim();
+                if (!k.isEmpty() && token.startsWith(k)) return true;
+            }
+        }
+        return false;
     }
 
     public static void onOverlayPre(RenderGuiOverlayEvent.Pre e) {

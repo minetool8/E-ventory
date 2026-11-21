@@ -33,7 +33,8 @@ public final class HudConfig {
         public final ForgeConfigSpec.IntValue taczReserveBottom;
         public final ForgeConfigSpec.BooleanValue hideExperienceBar;
         public final ForgeConfigSpec.BooleanValue logOverlayIds;
-        public final ForgeConfigSpec.BooleanValue petiteAutoEnable;
+        public final ForgeConfigSpec.BooleanValue petiteLayout;
+        public final ForgeConfigSpec.ConfigValue<java.util.List<? extends String>> hiddenOverlayKeywords;
         public final ForgeConfigSpec.BooleanValue hideEffects;
         public final ForgeConfigSpec.BooleanValue removeVanillaHotbar;
         public final ForgeConfigSpec.BooleanValue hideHeldItemName;
@@ -71,8 +72,12 @@ public final class HudConfig {
                     .define("hideHeldItemName", true);
             hideEffects = b.comment("Hide active potion/status effect icons everywhere (HUD and inventory screens).")
                     .define("hideEffects", true);
-            petiteAutoEnable = b.comment("If Petite Inventory is installed, switch its grid layout on for the grid inventory screen.")
-                    .define("petiteAutoEnable", true);
+            petiteLayout = b.comment("Switch Petite Inventory's grid layout ON for the E-ventory screen (multi-slot items).",
+                            "OFF by default: with it on, Petite can block item-on-item clicks such as battery -> flashlight.")
+                    .define("petiteLayout", false);
+            hiddenOverlayKeywords = b.comment("HUD overlays whose id contains one of these words (whole words / word starts) are hidden.",
+                            "'kill' hides the kill-counter skull. Add e.g. \"hit\" to hide hit markers too.")
+                    .defineListAllowEmpty("hiddenOverlayKeywords", java.util.List.of("kill"), o -> o instanceof String);
             logOverlayIds = b.comment("Log every HUD overlay id once (helps find which mod draws something you want hidden).")
                     .define("logOverlayIds", true);
             b.pop();

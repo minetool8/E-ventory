@@ -19,7 +19,7 @@ public final class PetiteCompat {
     private PetiteCompat() {}
 
     public static void enableFor(Screen screen) {
-        if (done || !HudConfig.CLIENT.petiteAutoEnable.get()) return;
+        if (done || !HudConfig.CLIENT.petiteLayout.get()) return;
         if (!ModList.get().isLoaded("petiteinventory")) return;
         done = true;
         try {

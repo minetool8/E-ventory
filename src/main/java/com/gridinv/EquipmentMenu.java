@@ -300,12 +300,15 @@ public class EquipmentMenu extends AbstractContainerMenu {
                 boolean carriedHandled = carried.isItemEnabled(features) && carried.overrideStackedOnOther(slot, action, p);
                 boolean slotHandled = !carriedHandled && slotStack.isItemEnabled(features)
                         && slotStack.overrideOtherStackedOnMe(carried, slot, action, p, carriedAccess);
+                // mods that implement stacking through Forge's ItemStackedOnOtherEvent (vanilla fires it right after the overrides)
+                boolean eventHandled = !carriedHandled && !slotHandled
+                        && fireStackedOnEvent(carried, slotStack, slot, action, p, carriedAccess);
                 if (interesting && HudConfig.debugItemClicksEnabled()) {
                     p.displayClientMessage(Component.literal("[E-ventory] " + (p.level().isClientSide ? "client" : "server")
-                            + ": " + cn + " on " + sn + " (" + action + ") -> carried item handled=" + carriedHandled
-                            + ", slot item handled=" + slotHandled), false);
+                            + ": cursor=" + cn + ", slot=" + sn + " (" + action + ") -> cursor item handled=" + carriedHandled
+                            + ", slot item handled=" + slotHandled + ", forge event handled=" + eventHandled), false);
                 }
-                if (carriedHandled || slotHandled) {
+                if (carriedHandled || slotHandled || eventHandled) {
                     slot.setChanged();
                     return;
                 }
@@ -314,7 +317,25 @@ public class EquipmentMenu extends AbstractContainerMenu {
         super.clicked(slotId, button, type, p);
     }
 
-    private static String itemName(ItemStack stack) {
+    private static java.lang.reflect.Method stackedOnHook;
+    private static boolean stackedOnHookLooked;
+
+    /** ForgeHooks.onItemStackedOn via reflection (true = a listener consumed the click). */
+    private static boolean fireStackedOnEvent(ItemStack carried, ItemStack slotStack, Slot slot, ClickAction action,
+                                              Player p, SlotAccess access) {
+        if (!stackedOnHookLooked) {
+            stackedOnHookLooked = true;
+            try {
+                stackedOnHook = Class.forName("net.minecraftforge.common.ForgeHooks").getMethod("onItemStackedOn",
+                        ItemStack.class, ItemStack.class, Slot.class, ClickAction.class, Player.class, SlotAccess.class);
+            } catch (Throwable ignored) { stackedOnHook = null; }
+        }
+        if (stackedOnHook == null) return false;
+        try { return (Boolean) stackedOnHook.invoke(null, carried, slotStack, slot, action, p, access); }
+        catch (Throwable t) { return false; }
+    }
+
+    public static String itemName(ItemStack stack) {
         var key = net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(stack.getItem());
         return key == null ? "" : key.toString();
     }

@@ -11,6 +11,7 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -120,11 +121,40 @@ public class EquipmentScreen extends AbstractContainerScreen<EquipmentMenu> {
         return new double[]{mx, my};
     }
 
+    private boolean swallowRelease;
+
     @Override public boolean mouseClicked(double mx, double my, int b) {
-        double[] m = mapMouse(mx, my); return super.mouseClicked(m[0], m[1], b);
+        double[] m = mapMouse(mx, my);
+        if ((b == 0 || b == 1) && tryDirectItemClick(m[0], m[1], b)) {
+            swallowRelease = true;
+            return true;
+        }
+        return super.mouseClicked(m[0], m[1], b);
     }
     @Override public boolean mouseReleased(double mx, double my, int b) {
+        if (swallowRelease) { swallowRelease = false; return true; }
         double[] m = mapMouse(mx, my); return super.mouseReleased(m[0], m[1], b);
+    }
+
+    /**
+     * Battery <-> flashlight: send the click straight to the menu as a plain PICKUP click, before any other
+     * mod's screen hooks (Petite Inventory's placement rules) can swallow it.
+     */
+    private boolean tryDirectItemClick(double mx, double my, int button) {
+        ItemStack carried = menu.getCarried();
+        if (carried.isEmpty()) return false;
+        Slot target = null;
+        for (Slot s : menu.slots) {
+            if (s.isActive() && mx >= leftPos + s.x - 1 && mx < leftPos + s.x + 17
+                    && my >= topPos + s.y - 1 && my < topPos + s.y + 17) { target = s; break; }
+        }
+        if (target == null || !target.hasItem()) return false;
+        String cn = EquipmentMenu.itemName(carried), sn = EquipmentMenu.itemName(target.getItem());
+        boolean pair = (cn.contains("battery") && sn.contains("flashlight"))
+                    || (cn.contains("flashlight") && sn.contains("battery"));
+        if (!pair) return false;
+        slotClicked(target, target.index, button, ClickType.PICKUP);
+        return true;
     }
     @Override public boolean mouseDragged(double mx, double my, int b, double dx, double dy) {
         double[] m = mapMouse(mx, my); return super.mouseDragged(m[0], m[1], b, dx, dy);

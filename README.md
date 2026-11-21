@@ -67,3 +67,8 @@ Petite Inventory merges hotbar slots for multi-slot items like guns and then dra
 Clicking a battery onto a flashlight in the E-ventory screen prints a chat line from the client and from the server, e.g.
 `[E-ventory] server: flashierflashlights:battery on flashierflashlights:flashlight (SECONDARY) -> carried item handled=false, slot item handled=false`
 It reports whether the battery item or the flashlight item accepted the click. Disable with `debugItemClicks = false` in config/gridinventory-client.toml once batteries work.
+
+## Latest changes
+- Petite grid layout on the E-ventory screen is now OFF by default (config key `petiteLayout`; the old `petiteAutoEnable` key is gone so an old saved `true` can't linger). Turn it on only if you want multi-slot items inside E-ventory.
+- Battery <-> flashlight clicks are sent straight to the menu from the screen (left or right click), and the menu also fires Forge's ItemStackedOnOtherEvent path itself. The debug chat line now reads `cursor=<item>, slot=<item> -> ...`.
+- Kill-counter skull removed: overlays whose id has a word starting with a keyword in `hiddenOverlayKeywords` (default `["kill"]`) are cancelled. Add "hit" to also hide hit markers.
